@@ -182,8 +182,8 @@ def estimate_rom(tensors: List[MyTensor]):
     ### ENTER STUDENT CODE BELOW ###
     '''
     formula :
-    rom_bytes = N_elements * size_per_weight
-    N_weight = d1 * d2 * d3 *....* dn
+    rom_bytes = N_element * size_per_weight
+    N_element = d1 * d2 * d3 *....* dn
     
     example :
     Reshape-Layer   [4] shape int32 -> 4*4=16
@@ -249,6 +249,7 @@ def estimate_ram(tensors: List[MyTensor], layers: List[MyLayer]):
     
     1. cauculate input and output buffers for each layer
     2. find the maximum of all layer
+    3. add the mayximum with the input and output of whole model
     
     example :
     Layer       input               output              buffer
@@ -257,7 +258,11 @@ def estimate_ram(tensors: List[MyTensor], layers: List[MyLayer]):
     Reshape     [1,25,20,4] int8    [1,2000] int8       2000+2000=4000
     FC          [1,2000] int8       [1,4] int8          2000+8=2008
     
-    ram_bytes = max(3920,3960,4000,2008) = 4000 Byte
+    max_buffer = max(3920,3960,4000,2008) = 4000 Byte
+    input = 1960 Byte
+    output = 4 Byte
+    
+    ram_bytes = 5964 Byte
     '''
     #layer_buffer = 0
     for layer in layers:
