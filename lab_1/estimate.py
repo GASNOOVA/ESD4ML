@@ -60,6 +60,15 @@ def estimate_conv2d_macs(in_shape: List[int], kernel_shape: List[int], out_shape
     macs = 0
 
     ### ENTER STUDENT CODE BELOW ###
+    '''
+    formula :
+    1.  for each ouput pixel, the number of MAC operations is equal to the size of the filter
+        i.e. filter_size = kernal_h * kernal_w * input_c
+    2.  and this is repeated for every output position and each channel (output_h * output_w * output_c)
+    '''
+    
+    macs = output_h * output_w * output_c * kernel_h * kernel_w *input_c
+    print(f'Conv2D Layer: {macs} MACS')
 
     ### ENTER STUDENT CODE ABOVE ###
 
@@ -106,6 +115,15 @@ def estimate_depthwise_conv2d_macs(
     macs = 0
 
     ### ENTER STUDENT CODE BELOW ###
+    '''
+    formula :
+    1.  each filter only operates on its corresponding input channel
+        i.e. filter_size = kernel_h * kernel_w * input_c
+    2.  and resulting in multiple output cahnnels (output_h * output_w * channel_mult)
+    3.  output_c = input_c * channel_mult
+    '''
+    macs = output_h * output_w * kernel_h * kernel_w * output_c
+    print(f'DepthwiseConv2D Layer: {macs} MACS')
 
     ### ENTER STUDENT CODE ABOVE ###
 
@@ -150,6 +168,14 @@ def estimate_fully_connected_macs(
     macs = 0
 
     ### ENTER STUDENT CODE BELOW ###
+    '''
+    print(f'\nInput Tensor: {in_shape}')
+    print(f'\nWeight Tensor: {filter_shape}')
+    print(f'\nOutput Tensor: {out_shape}')
+    '''
+    
+    macs = input_h * output_w * filter_h
+    print(f'Dense Layer: {macs} MACS')
 
     ### ENTER STUDENT CODE ABOVE ###
 
@@ -249,7 +275,7 @@ def estimate_ram(tensors: List[MyTensor], layers: List[MyLayer]):
     
     1. cauculate input and output buffers for each layer
     2. find the maximum of all layer
-    3. add the mayximum with the input and output of whole model
+    3. under the lifetime analysis, the input/output of the whole model don't need to keep in the memory
     
     example :
     Layer       input               output              buffer
@@ -264,12 +290,31 @@ def estimate_ram(tensors: List[MyTensor], layers: List[MyLayer]):
     
     ram_bytes = 5964 Byte
     '''
-    #layer_buffer = 0
+    
+    # keep track of the current active buffers
+    max_buffer = 0
+    
     for layer in layers:
-        input_size = sum(reduce(lambda x, y: x * y, tensors[t].shape) * 1 for t in layer.inputs)
-        output_size = sum(reduce(lambda x, y: x * y, tensors[t].shape) * 1 for t in layer.outputs)
+        # Cauculate the size of input and output tensors of the current layer
+        input_size = sum(reduce(lambda x, y: x * y, tensors[t].shape) * 1 for t in layer.inputs if not tensors[t].is_const)
+        output_size = sum(reduce(lambda x, y: x * y, tensors[t].shape) * 1 for t in layer.outputs if not tensors[t].is_const)
         layer_buffer = input_size + output_size
-        ram_bytes = max(ram_bytes, layer_buffer)
+        
+        # print intermediate values for each layer
+        '''
+        print(f'\nLayer {layer.idx} ({layer.name}):')
+        print(f'\nInput Size: {input_size} bytes')
+        print(f'\nOutput Size: {output_size} bytes')
+        print(f'\nLayer Buffer: {layer_buffer} bytes')
+        '''
+        
+        # update the maximum buffer
+        max_buffer = max(max_buffer, layer_buffer)
+    
+    # Adding input and output buffers for the whole model
+    #model_input_size = sum(reduce(lambda x, y: x * y, tensors[t].shape) * 1 for t in layers[0].inputs if not tensors[t].is_const)
+    #model_output_size = sum(reduce(lambda x, y: x * y, tensors[t].shape) * 1 for t in layers[-1].outputs if not tensors[t].is_const)
+    ram_bytes = max_buffer
 
     ### ENTER STUDENT CODE ABOVE ###
 
